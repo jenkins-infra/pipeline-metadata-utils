@@ -81,6 +81,10 @@ public class HyperLocalPluginManager extends LocalPluginManager{
      * Note: the plugin cycles section is optional because, while incredibly helpful, 
      * it can easily cross the open file descriptors threshold crippling any other work 
      * when processing a huge amount of plugins (several hundred).
+     *
+     * @param initStrategy Init strategy to use for the diagram
+     *
+     * @return TaskBuilder to actually execute.
      */
     public TaskBuilder diagramPlugins(final InitStrategy initStrategy){
         return new TaskGraphBuilder() {
@@ -397,11 +401,11 @@ public class HyperLocalPluginManager extends LocalPluginManager{
      * This is pretty much a copy of the final ExtensionFinder.Sezpoz class from 1.651 fitted
      * for a custom ClassLoader rather than checking Jenkins
      * The only differences are:
-     *   * getIndices -> ClassLoader parameter; doesn't check Jenkins
-     *   * find -> ClassLoader parameter
-     *   * scout -> ClassLoader parmeter
+     *   * getIndices -&gt; ClassLoader parameter; doesn't check Jenkins
+     *   * find -&gt; ClassLoader parameter
+     *   * scout -&gt; ClassLoader parameter
      *
-     * IMPORTANT: don't use find(Class<T> type, Hudson hud) as the getIndices method will error.
+     * IMPORTANT: don't use find(Class&lt;T&gt; type, Hudson hud) as the getIndices method will error.
      */
     public static final class SmallSezpoz extends ExtensionFinder {
 
