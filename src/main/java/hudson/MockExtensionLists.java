@@ -27,7 +27,7 @@ public class MockExtensionLists {
         }
     }
 
-    private class MockExtensionList {
+    private static class MockExtensionList {
         ExtensionList mockExtensionList;
 
         public MockExtensionList(HyperLocalPluginManager hlpm, Jenkins hudson, Class type) {

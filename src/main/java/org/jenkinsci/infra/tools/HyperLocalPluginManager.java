@@ -29,6 +29,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.ref.WeakReference;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,7 +46,10 @@ import java.util.logging.Level;
  */
 public class HyperLocalPluginManager extends LocalPluginManager{
     private final ModClassicPluginStrategy strategy;
-    public final UberPlusClassLoader uberPlusClassLoader = new UberPlusClassLoader();
+    public final UberPlusClassLoader uberPlusClassLoader = AccessController.doPrivileged((PrivilegedAction<UberPlusClassLoader>)
+            () -> new UberPlusClassLoader()
+    );
+
     private final boolean checkCycles;
 
     public HyperLocalPluginManager(){
@@ -338,7 +343,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
     /**
      * A PluginStrategy that supports custom classloaders (the UberPlusClassLoader).
      */
-    public class ModClassicPluginStrategy extends ClassicPluginStrategy {
+    public static class ModClassicPluginStrategy extends ClassicPluginStrategy {
         private ClassLoader classLoader;
 
         public ModClassicPluginStrategy(HyperLocalPluginManager pluginManager) {
