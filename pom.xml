@@ -10,7 +10,7 @@
 
   <artifactId>pipeline-metadata-utils</artifactId>
   <groupId>org.jenkins-ci.infra</groupId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <name>Pipeline Metadata Utils</name>
   <description>Utilities for use in generating metadata and documentation for Pipeline steps or other Describables</description>
 
@@ -53,5 +53,6 @@
   <scm>
     <connection>scm:git:git://github.com/jenkins-infra/pipeline-metadata-utils.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkins-infra/pipeline-metadata-utils.git</developerConnection>
+    <tag>pipeline-metadata-utils-1.0</tag>
   </scm>
 </project>
