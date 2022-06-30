@@ -1,7 +1,39 @@
 package org.jenkinsci.infra.tools;
 
+import static hudson.init.InitMilestone.PLUGINS_LISTED;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.jvnet.hudson.reactor.Executable;
+import org.jvnet.hudson.reactor.Reactor;
+import org.jvnet.hudson.reactor.TaskBuilder;
+import org.jvnet.hudson.reactor.TaskGraphBuilder;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ClassicPluginStrategy;
 import hudson.Extension;
 import hudson.ExtensionComponent;
@@ -9,8 +41,8 @@ import hudson.ExtensionFinder;
 import hudson.LocalPluginManager;
 import hudson.PluginManager;
 import hudson.PluginWrapper;
-import hudson.Util;
 import hudson.init.InitStrategy;
+import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.util.CyclicGraphDetector;
 import jenkins.ClassLoaderReflectionToolkit;
@@ -18,23 +50,6 @@ import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionFilter;
 import net.java.sezpoz.Index;
 import net.java.sezpoz.IndexItem;
-import org.jvnet.hudson.reactor.*;
-
-import static hudson.init.InitMilestone.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * Acts as a PluginManager that operates outside the normal startup process of Jenkins.  Essentially, this captures the
@@ -45,26 +60,15 @@ import java.util.logging.Level;
  * use calls to Jenkins.
  */
 public class HyperLocalPluginManager extends LocalPluginManager{
+    private static final Logger LOG = Logger.getLogger(HyperLocalPluginManager.class.getName());
     private final ModClassicPluginStrategy strategy;
-    public final UberPlusClassLoader uberPlusClassLoader = AccessController.doPrivileged((PrivilegedAction<UberPlusClassLoader>)
-            () -> new UberPlusClassLoader()
-    );
-
+    public final UberPlusClassLoader uberPlusClassLoader = new UberPlusClassLoader();
     private final boolean checkCycles;
 
-    public HyperLocalPluginManager(){
-        this(".");
-    }
-    
     public HyperLocalPluginManager(boolean cycles){
         this(".", cycles);
     }
-    
-    public HyperLocalPluginManager(String rootDir) {
-        super(new File(rootDir));
-        this.strategy = createModPluginStrategy();
-        checkCycles = true;
-    }
+
     public HyperLocalPluginManager(String rootDir, boolean cycles) {
         super(new File(rootDir));
         this.strategy = createModPluginStrategy();
@@ -86,10 +90,6 @@ public class HyperLocalPluginManager extends LocalPluginManager{
      * Note: the plugin cycles section is optional because, while incredibly helpful, 
      * it can easily cross the open file descriptors threshold crippling any other work 
      * when processing a huge amount of plugins (several hundred).
-     *
-     * @param initStrategy Init strategy to use for the diagram
-     *
-     * @return TaskBuilder to actually execute.
      */
     public TaskBuilder diagramPlugins(final InitStrategy initStrategy){
         return new TaskGraphBuilder() {
@@ -107,7 +107,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                         // once we've listed plugins, we can fill in the reactor with plugin-specific initialization tasks
                         TaskGraphBuilder g = new TaskGraphBuilder();
 
-                        final Map<String,File> inspectedShortNames = new HashMap<String,File>();
+                        final Map<String,File> inspectedShortNames = new HashMap<>();
 
                         for( final File arc : archives ) {
                             g.followedBy().notFatal().attains(PLUGINS_LISTED).add("Inspecting plugin " + arc, new Executable() {
@@ -134,7 +134,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                                 private boolean isDuplicate(PluginWrapper p) {
                                     String shortName = p.getShortName();
                                     if (inspectedShortNames.containsKey(shortName)) {
-                                        System.out.println("Ignoring "+arc+" because "+inspectedShortNames.get(shortName)+" is already loaded");
+                                        LOG.info("Ignoring "+arc+" because "+inspectedShortNames.get(shortName)+" is already loaded");
                                         return true;
                                     }
 
@@ -154,7 +154,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                                         CyclicGraphDetector<PluginWrapper> cgd = new CyclicGraphDetector<PluginWrapper>() {
                                             @Override
                                             protected List<PluginWrapper> getEdges(PluginWrapper p) {
-                                                List<PluginWrapper> next = new ArrayList<PluginWrapper>();
+                                                List<PluginWrapper> next = new ArrayList<>();
                                                 addTo(p.getDependencies(), next);
                                                 addTo(p.getOptionalDependencies(), next);
                                                 return next;
@@ -169,10 +169,10 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                                             }
 
                                             @Override
-                                            protected void reactOnCycle(PluginWrapper q, List<PluginWrapper> cycle)
-                                                    throws hudson.util.CyclicGraphDetector.CycleDetectedException {
+                                            protected void reactOnCycle(PluginWrapper q, List<PluginWrapper> cycle) {
 
-                                                System.out.println("FATAL: found cycle in plugin dependencies: (root="+q+", deactivating all involved) "+Util.join(cycle," -> "));
+                                                CharSequence[] csCycle = cycle.toArray(new CharSequence[cycle.size()]);
+                                                LOG.severe("FATAL: found cycle in plugin dependencies: (root="+q+", deactivating all involved) "+String.join(" -> ", csCycle));
                                                 for (PluginWrapper pluginWrapper : cycle) {
                                                     pluginWrapper.setHasCycleDependency(true);
                                                     failedPlugins.add(new FailedPlugin(pluginWrapper.getShortName(), new CycleDetectedException(cycle)));
@@ -213,25 +213,21 @@ public class HyperLocalPluginManager extends LocalPluginManager{
          * Make generated types visible.
          * Keyed by the generated class name.
          */
-        private ConcurrentMap<String, WeakReference<Class>> generatedClasses = new ConcurrentHashMap<String, WeakReference<Class>>();
+        private final ConcurrentMap<String, WeakReference<Class<?>>> generatedClasses = new ConcurrentHashMap<>();
         /** Cache of loaded, or known to be unloadable, classes. */
-        private final Map<String,Class<?>> loaded = new HashMap<String,Class<?>>();
-        private final Map<String, String> byPlugin = new HashMap<String, String>();
+        private final Map<String,Class<?>> loaded = new HashMap<>();
+        private final Map<String, String> byPlugin = new HashMap<>();
 
         public UberPlusClassLoader() {
             super(PluginManager.class.getClassLoader());
         }
 
-        public void addNamedClass(String className, Class c) {
-            generatedClasses.put(className,new WeakReference<Class>(c));
-        }
-
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
             //likely want to avoid this, but we'll deal with it right now.
-            WeakReference<Class> wc = generatedClasses.get(name);
+            WeakReference<Class<?>> wc = generatedClasses.get(name);
             if (wc!=null) {
-                Class c = wc.get();
+                Class<?> c = wc.get();
                 if (c!=null)    return c;
                 else            generatedClasses.remove(name,wc);
             }
@@ -252,7 +248,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
             if (FAST_LOOKUP) {
                 for (PluginWrapper p : activePlugins) {
                     try {
-                        Class<?> c = ClassLoaderReflectionToolkit._findLoadedClass(p.classLoader, name);
+                        Class<?> c = ClassLoaderReflectionToolkit.loadClass(p.classLoader, name);
                         if (c != null) {
                             synchronized (loaded) {
                                 loaded.put(name, c);
@@ -263,7 +259,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                             return c;
                         }
                         // calling findClass twice appears to cause LinkageError: duplicate class def
-                        c = ClassLoaderReflectionToolkit._findClass(p.classLoader, name);
+                        c = ClassLoaderReflectionToolkit.loadClass(p.classLoader, name);
                         synchronized (loaded) {
                             loaded.put(name, c);
                         }
@@ -278,7 +274,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
             } else {
                 for (PluginWrapper p : activePlugins) {
                     try {
-                        Class c = p.classLoader.loadClass(name);
+                        Class<?> c = p.classLoader.loadClass(name);
                         synchronized (byPlugin){
                             byPlugin.put(c.getName(), p.getShortName());
                         }
@@ -315,7 +311,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
 
         @Override
         protected Enumeration<URL> findResources(String name) throws IOException {
-            List<URL> resources = new ArrayList<URL>();
+            List<URL> resources = new ArrayList<>();
             if (FAST_LOOKUP) {
                 for (PluginWrapper p : activePlugins) {
                     resources.addAll(Collections.list(ClassLoaderReflectionToolkit._findResources(p.classLoader, name)));
@@ -344,7 +340,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
      * A PluginStrategy that supports custom classloaders (the UberPlusClassLoader).
      */
     public static class ModClassicPluginStrategy extends ClassicPluginStrategy {
-        private ClassLoader classLoader;
+        private final ClassLoader classLoader;
 
         public ModClassicPluginStrategy(HyperLocalPluginManager pluginManager) {
             super(pluginManager);
@@ -352,9 +348,9 @@ public class HyperLocalPluginManager extends LocalPluginManager{
         }
 
         public <T> List<ExtensionComponent<T>> findComponents(Class<T> type, Hudson hudson) {
-            List<SmallSezpoz> finders = Collections.<SmallSezpoz>singletonList(new SmallSezpoz());
+            List<SmallSezpoz> finders = Collections.singletonList(new SmallSezpoz());
             for (SmallSezpoz finder : finders) {
-                finder.scout(type, classLoader);
+                finder.scout(classLoader);
             }
 
             List<ExtensionComponent<T>> r = Lists.newArrayList();
@@ -377,9 +373,9 @@ public class HyperLocalPluginManager extends LocalPluginManager{
         }
         
         public <T> List<T> findComponents(Class<T> type) {
-            List<SmallSezpoz> finders = Collections.<SmallSezpoz>singletonList(new SmallSezpoz());
+            List<SmallSezpoz> finders = Collections.singletonList(new SmallSezpoz());
             for (SmallSezpoz finder : finders) {
-                finder.scout(type, classLoader);
+                finder.scout(classLoader);
             }
 
             List<ExtensionComponent<T>> r = Lists.newArrayList();
@@ -402,15 +398,25 @@ public class HyperLocalPluginManager extends LocalPluginManager{
         }
     }
 
+    @Override
+    protected @NonNull Set<String> loadPluginsFromWar(@NonNull String p){
+        return Collections.emptySet();
+    }
+
+    @Override
+    protected @NonNull Set<String> loadPluginsFromWar(@NonNull String fromPath, @CheckForNull FilenameFilter filter) {
+        return Collections.emptySet();
+    }
+
     /**
      * This is pretty much a copy of the final ExtensionFinder.Sezpoz class from 1.651 fitted
      * for a custom ClassLoader rather than checking Jenkins
      * The only differences are:
-     *   * getIndices -&gt; ClassLoader parameter; doesn't check Jenkins
-     *   * find -&gt; ClassLoader parameter
-     *   * scout -&gt; ClassLoader parameter
+     *   * getIndices -> ClassLoader parameter; doesn't check Jenkins
+     *   * find -> ClassLoader parameter
+     *   * scout -> ClassLoader parmeter
      *
-     * IMPORTANT: don't use find(Class&lt;T&gt; type, Hudson hud) as the getIndices method will error.
+     * IMPORTANT: don't use find(Class<T> type, Hudson hud) as the getIndices method will error.
      */
     public static final class SmallSezpoz extends ExtensionFinder {
 
@@ -455,7 +461,7 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                     AnnotatedElement e = item.element();
                     Class<?> extType;
                     if (e instanceof Class) {
-                        extType = (Class) e;
+                        extType = (Class<?>) e;
                     } else
                     if (e instanceof Field) {
                         extType = ((Field)e).getType();
@@ -466,27 +472,37 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                         throw new AssertionError();
 
                     if(type.isAssignableFrom(extType)) {
-                        Object instance = item.instance();
+                        Object instance = safeInstance(item);
                         if(instance!=null)
                             result.add(new ExtensionComponent<>(type.cast(instance),item.annotation()));
                     }
                 } catch (LinkageError|Exception e) {
                     // sometimes the instantiation fails in an indirect classloading failure,
                     // which results in a LinkageError
-                    System.out.println("Failed to load "+item.className() + "\n" +  e);
+                    LOG.fine("Failed to load "+item.className() + "\n" +  e);
                 }
             }
 
             return result;
         }
 
-        public void scout(Class extensionType, ClassLoader cl) {
+        private Object safeInstance(IndexItem<Extension, Object> item) {
+            try {
+                return item.instance();
+            } catch (Exception | Error e) {
+                LOG.log(Level.WARNING, "Cannot instantiate " + item.className(),
+                        e.getCause() != null ? e.getCause() : e);
+            }
+            return null;
+        }
+
+        public void scout(ClassLoader cl) {
             for (IndexItem<Extension,Object> item : getIndices(cl)) {
                 try {
                     AnnotatedElement e = item.element();
                     Class<?> extType;
                     if (e instanceof Class) {
-                        extType = (Class) e;
+                        extType = (Class<?>) e;
                     } else
                     if (e instanceof Field) {
                         extType = ((Field)e).getType();
@@ -498,15 +514,30 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                     // according to JDK-4993813 this is the only way to force class initialization
                     Class.forName(extType.getName(),true,extType.getClassLoader());
                 } catch (Exception | LinkageError e) {
-                    System.out.println("Failed to scout " + item.className() + "\n" + e);
+                    LOG.fine("Failed to scout " + item.className() + "\n" + e);
                 }
             }
         }
+    }
 
-        private Level logLevel(IndexItem<Extension, Object> item) {
-            return item.annotation().optional() ? Level.FINE : Level.WARNING;
+    /**
+     * @param d descriptor
+     * @return name of the plugin this class belongs to, or "core" if not found
+     */
+    protected String getPluginNameForDescriptor(Descriptor<?> d) {
+        String className = d.getClass().getName();
+        // try one last time to find out which plugin this belongs to (needed for WEBSITE-434)
+        try {
+            uberPlusClassLoader.findClass(className);
+        } catch (ClassNotFoundException e) {
+            LOG.log(Level.WARNING, "Class not found", e);
         }
+    	String pluginName = uberPlusClassLoader.getByPlugin().get(className);
+        if (pluginName == null) {
+            LOG.info("No plugin found, assuming core: " + className);
+            return "core";
+        }
+        return pluginName.trim();
     }
 
 }
-
