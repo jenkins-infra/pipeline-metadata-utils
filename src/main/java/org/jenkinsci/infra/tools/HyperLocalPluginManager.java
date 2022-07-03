@@ -249,15 +249,6 @@ public class HyperLocalPluginManager extends LocalPluginManager{
                 for (PluginWrapper p : activePlugins) {
                     try {
                         Class<?> c = ClassLoaderReflectionToolkit.loadClass(p.classLoader, name);
-                        if (c != null) {
-                            synchronized (loaded) {
-                                loaded.put(name, c);
-                            }
-                            synchronized (byPlugin){
-                                byPlugin.put(c.getName(), p.getShortName());
-                            }
-                            return c;
-                        }
                         // calling findClass twice appears to cause LinkageError: duplicate class def
                         c = ClassLoaderReflectionToolkit.loadClass(p.classLoader, name);
                         synchronized (loaded) {
