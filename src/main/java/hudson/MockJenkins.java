@@ -5,10 +5,10 @@
  * within Jenkins.  Nothing here actually starts the process, and
  * provides a very bland "Jenkins" startup
  *
- * This mock technically should be for Jenkins.class.  However, 
- * ExtensionList pretty much requires that the object also be of 
- * type Hudson.  Since Mockito works by creating a subclass of the 
- * desired class, it has to be of Hudson.  This should be changed 
+ * This mock technically should be for Jenkins.class.  However,
+ * ExtensionList pretty much requires that the object also be of
+ * type Hudson.  Since Mockito works by creating a subclass of the
+ * desired class, it has to be of Hudson.  This should be changed
  * when ExtensionList no longer requires a Hudon object.
  */
 package hudson;
