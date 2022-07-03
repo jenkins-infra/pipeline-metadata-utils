@@ -2,7 +2,7 @@
 pipeline {
     tools {
         maven "mvn"
-        jdk "jdk8"
+        jdk "jdk11"
     }
 
     agent {
@@ -16,9 +16,9 @@ pipeline {
     }
 
     post {
-        always {
-            junit '*/target/surefire-reports/*.xml'
-        }
+        // always {
+        //     junit '*/target/surefire-reports/*.xml'
+        // }
         success {
             archive "*/target/**/*"
         }

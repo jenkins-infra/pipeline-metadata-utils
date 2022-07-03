@@ -123,6 +123,8 @@ public class ToAsciiDoc {
 
     /**
      * Generate documentation for a plugin step.
+     * @param d descriptor for the step to be used for help generation
+     * @return help generated for the step
      */
     public static String generateStepHelp(StepDescriptor d){
         StringBuilder mkDesc = new StringBuilder(header(3)).append(" +").append(d.getFunctionName()).append("+: ").append(d.getDisplayName()).append("\n");
@@ -153,6 +155,10 @@ public class ToAsciiDoc {
      * Generate help documentation for an entire plugin.  Returns a String that can
      * be saved into a file.
      *
+     * @param pluginName identifier of plugin to be used for help generation
+     * @param displayName name of plugin to be used for help generation
+     * @param byPlugin map of plugin identifiers and steps to be generated
+     * @param genHeader if set to true, then header should be generated
      * @return String  total documentation for the page
      */
     public static String generatePluginHelp(String pluginName, String displayName, Map<String, List<StepDescriptor>> byPlugin, boolean genHeader){
