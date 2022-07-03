@@ -1,7 +1,3 @@
-/**
- * This mocks a few different
- */
-
 package hudson;
 
 import static org.mockito.Mockito.doAnswer;
@@ -21,6 +17,10 @@ import org.mockito.stubbing.Answer;
 import hudson.model.Hudson;
 import hudson.model.listeners.SaveableListener;
 import jenkins.model.Jenkins;
+
+/**
+ * A mocked way to get at {@link ExtensionList}s. In {@code hudson} package due to protected access in {@link ExtensionList}.
+ */
 
 public class MockExtensionLists {
     private static Map<String, ExtensionList<?>> extensionLists = new HashMap<String, ExtensionList<?>>();
