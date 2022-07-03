@@ -31,6 +31,9 @@ public class MockJenkins {
      *     * getInitLevel     -&gt; COMPLETED; Jenkins is "setup" as soon as the pm is populated
      *     * getExtensionList -&gt; use the MockExtensionLists
      *     * getPlugin        -&gt; get the Plugin information from HyperLocalPluginManager
+     *
+     * @param pm plugin manager to be used in the mock Jenkins controller
+     * @return mock Jenkins object with pm as the plugin manager
      */
     public Jenkins getMockJenkins(HyperLocalPluginManager pm) {
         Jenkins mockJenkins = mock(Hudson.class); //required by ExtensionList
