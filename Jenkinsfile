@@ -2,7 +2,7 @@
 pipeline {
     tools {
         maven "mvn"
-        jdk "jdk8"
+        jdk "jdk11"
     }
 
     agent {
