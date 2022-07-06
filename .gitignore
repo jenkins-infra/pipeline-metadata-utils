@@ -13,6 +13,8 @@ work
 .idea
 out
 
+.vscode/
+
 .classpath
 .project
 .settings
