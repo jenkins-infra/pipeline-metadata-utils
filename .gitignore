@@ -2,12 +2,18 @@ target
 work
 .DS_Store
 
+#ignore everything in the mvn directory but the wraper property file
+.mvn
+!.mvn/wrapper/maven-wrapper.properties
+
 .idea/
 *.iml
 *.iws
 *.ipr
 .idea
 out
+
+.vscode/
 
 .classpath
 .project
