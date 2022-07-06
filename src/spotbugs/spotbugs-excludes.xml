@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<FindBugsFilter>
+  <!--
+    Here lies technical debt. Exclusions in this section have not yet been triaged. When working on
+    on this section, pick an exclusion to triage, then:
+    - If it is a false positive, add a @SuppressFBWarnings(value = "[…]", justification = "[…]")
+      annotation indicating the reason why it is a false positive, then remove the exclusion from
+      this section.
+    - If it is not a false positive, fix the bug, then remove the exclusion from this section.
+  -->
+  <Match>
+    <Or>
+      <Bug pattern="SIC_INNER_SHOULD_BE_STATIC"/>
+      <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION"/>
+      <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_THROWABLE"/>
+      <Bug pattern="EI_EXPOSE_REP"/>
+      <Bug pattern="DP_CREATE_CLASSLOADER_INSIDE_DO_PRIVILEGED"/>
+    </Or>
+  </Match>
+</FindBugsFilter>
