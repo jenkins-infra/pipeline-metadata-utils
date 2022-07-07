@@ -39,10 +39,10 @@ public class MockJenkins {
 
     /**
      * There are a few methods that need to be mocked in order for setup to work properly:
-     *     * getPluginManager -> must return HyperLocalPluginManager
-     *     * getInitLevel     -> COMPLETED; Jenkins is "setup" as soon as the pm is populated
-     *     * getExtensionList -> use the MockExtensionLists
-     *     * getPlugin        -> get the Plugin information from HyperLocalPluginManager
+     *     * getPluginManager -&gt; must return HyperLocalPluginManager
+     *     * getInitLevel     -&gt; COMPLETED; Jenkins is "setup" as soon as the pm is populated
+     *     * getExtensionList -&gt; use the MockExtensionLists
+     *     * getPlugin        -&gt; get the Plugin information from HyperLocalPluginManager
      */
      @SuppressWarnings({"unchecked", "rawtypes"})
      public Jenkins getMockJenkins(HyperLocalPluginManager pm) {
