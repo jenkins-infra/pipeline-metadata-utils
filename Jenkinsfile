@@ -30,7 +30,7 @@ pipeline {
     stages {
         stage("build") {
             steps {
-                sh 'mvn clean validate -Dmaven.test.failure.ignore=true'
+                sh 'mvn clean validate javadoc:aggregate -Dmaven.test.failure.ignore=true'
             }
         }
     }
