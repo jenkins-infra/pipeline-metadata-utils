@@ -7,4 +7,7 @@ tasks:
   - init:
       mvn dependency:purge-local-repository
 
+vscode:
+  extensions:
+    - vscjava.vscode-java-pack
 
