@@ -6,7 +6,8 @@ image:
 tasks:
   - init:
       # mvn dependency:purge-local-repository
-      mvn verify
+      mvn dependency:resolve
+      mvn dependency:resolve-plugins
 
 vscode:
   extensions:
