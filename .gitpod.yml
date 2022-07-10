@@ -1,12 +1,16 @@
+# This is a sample minimalist Java gitpod configuration
+# You can adjust it to your specific needs (see https://www.gitpod.io/docs/config-gitpod-file)
 
-
+# Using an updated Gitpod docker image (when usin a non default JDK or tools)
 image:
   file: .gitpod.Dockerfile
 
+# command executed at atartup (helps having all dependencies ready)
 tasks:
   - init:
       mvn verify 
 
+# install the vscode extentions required to work with Java
 vscode:
   extensions:
     - vscjava.vscode-java-pack
