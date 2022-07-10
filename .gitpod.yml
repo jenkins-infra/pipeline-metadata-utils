@@ -5,7 +5,6 @@ image:
 
 tasks:
   - init:
-      # mvn dependency:purge-local-repository
       mvn verify 
 
 vscode:
