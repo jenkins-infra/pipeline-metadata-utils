@@ -35,62 +35,65 @@ import jenkins.install.InstallState;
 import jenkins.model.Jenkins;
 
 public class MockJenkins {
-     private MockExtensionLists mockLookup = new MockExtensionLists();
+    private MockExtensionLists mockLookup = new MockExtensionLists();
 
     /**
-     * There are a few methods that need to be mocked in order for setup to work properly:
-     *     * getPluginManager -&gt; must return HyperLocalPluginManager
-     *     * getInitLevel     -&gt; COMPLETED; Jenkins is "setup" as soon as the pm is populated
-     *     * getExtensionList -&gt; use the MockExtensionLists
-     *     * getPlugin        -&gt; get the Plugin information from HyperLocalPluginManager
+     * There are a few methods that need to be mocked in order for setup to work
+     * properly:
+     * * getPluginManager -&gt; must return HyperLocalPluginManager
+     * * getInitLevel -&gt; COMPLETED; Jenkins is "setup" as soon as the pm is
+     * populated
+     * * getExtensionList -&gt; use the MockExtensionLists
+     * * getPlugin -&gt; get the Plugin information from HyperLocalPluginManager
      */
-     @SuppressWarnings({"unchecked", "rawtypes"})
-     public Jenkins getMockJenkins(HyperLocalPluginManager pm) {
-         Jenkins mockJenkins = mock(Hudson.class); //required by ExtensionList
-         when(mockJenkins.getPluginManager()).thenReturn(pm);
-         when(mockJenkins.getInitLevel()).thenReturn(InitMilestone.COMPLETED);
-         when(mockJenkins.getInstallState()).thenReturn(InstallState.TEST);
-         when(mockJenkins.getComputers()).thenReturn(new Computer[0]);
-         when(mockJenkins.getRootDir()).thenReturn(new File(System.getProperty("java.io.tmpdir")));
-         try {
-             Field lookup = mockJenkins.getClass().getField("lookup");
-             lookup.setAccessible(true);
-             lookup.set(mockJenkins, new Lookup());
-             Field servletContext = mockJenkins.getClass().getField("servletContext");
-             servletContext.setAccessible(true);
-             servletContext.set(mockJenkins, mock(ServletContext.class));
-         } catch (NoSuchFieldException | IllegalAccessException e) {
-             e.printStackTrace();
-         }
-         doAnswer(new Answer<ExtensionList>() {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public Jenkins getMockJenkins(HyperLocalPluginManager pm) {
+        Jenkins mockJenkins = mock(Hudson.class); // required by ExtensionList
+        when(mockJenkins.getPluginManager()).thenReturn(pm);
+        when(mockJenkins.getInitLevel()).thenReturn(InitMilestone.COMPLETED);
+        when(mockJenkins.getInstallState()).thenReturn(InstallState.TEST);
+        when(mockJenkins.getComputers()).thenReturn(new Computer[0]);
+        when(mockJenkins.getRootDir()).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        try {
+            Field lookup = mockJenkins.getClass().getField("lookup");
+            lookup.setAccessible(true);
+            lookup.set(mockJenkins, new Lookup());
+            Field servletContext = mockJenkins.getClass().getField("servletContext");
+            servletContext.setAccessible(true);
+            servletContext.set(mockJenkins, mock(ServletContext.class));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        doAnswer(new Answer<ExtensionList>() {
             @Override
             public ExtensionList answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
                 return mockLookup.getMockExtensionList(pm, mockJenkins, (Class) args[0]);
             }
-         }).when(mockJenkins).getExtensionList(any(Class.class));
+        }).when(mockJenkins).getExtensionList(any(Class.class));
 
-         doAnswer(invocation -> {
-             Object[] args = invocation.getArguments();
-             for (Object _d : mockLookup.getMockExtensionList(pm, mockJenkins, Descriptor.class)) {
-                 Descriptor d = (Descriptor) _d;
-                 if (d.clazz == args[0]) {
-                     return d;
-                 }
-             }
-             return null;
-         }).when(mockJenkins).getDescriptor(any(Class.class));
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            for (Object _d : mockLookup.getMockExtensionList(pm, mockJenkins, Descriptor.class)) {
+                Descriptor d = (Descriptor) _d;
+                if (d.clazz == args[0]) {
+                    return d;
+                }
+            }
+            return null;
+        }).when(mockJenkins).getDescriptor(any(Class.class));
 
-                  doAnswer(new Answer<Plugin>() {
-             @Override
-             public Plugin answer(InvocationOnMock invocation) throws Throwable {
-                 Object[] args = invocation.getArguments();
-                 PluginWrapper p = pm.getPlugin((Class) args[0]);
-                 if(p==null)     return null; //not actually loaded; might need an override
-                 return p.getPlugin();
-             }
-         }).when(mockJenkins).getPlugin(any(Class.class));
+        doAnswer(new Answer<Plugin>() {
+            @Override
+            public Plugin answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                PluginWrapper p = pm.getPlugin((Class) args[0]);
+                if (p == null)
+                    return null; // not actually loaded; might need an override
+                return p.getPlugin();
+            }
+        }).when(mockJenkins).getPlugin(any(Class.class));
 
-         return mockJenkins;
-     }
- }
+        return mockJenkins;
+    }
+}
