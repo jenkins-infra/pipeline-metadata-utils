@@ -536,7 +536,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
         try {
             uberPlusClassLoader.findClass(className);
         } catch (ClassNotFoundException e) {
-            LOG.log(Level.WARNING, "Class not found for " + d.getId());
+            LOG.log(Level.FINER, "Class not found for " + d.getId());
         }
         if (pluginName == null) {
             LOG.info("No plugin found, assuming core: " + className);

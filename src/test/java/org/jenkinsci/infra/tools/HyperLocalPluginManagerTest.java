@@ -1,51 +1,68 @@
 package org.jenkinsci.infra.tools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
 
-import org.jenkinsci.pipeline_steps_doc_generator.PipelineStepExtractor;
-import org.jenkinsci.pipeline_steps_doc_generator.QuasiDescriptor;
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import hudson.PluginWrapper;
-
 public class HyperLocalPluginManagerTest {
     private final static String pluginDir = HyperLocalPluginManagerTest.class.getResource("/git-plugin").getPath();
-    private static PipelineStepExtractor pse = new PipelineStepExtractor();
-    private static Map<String, Map<String, List<QuasiDescriptor>>> steps;
-    private static final Logger LOG = Logger.getLogger(PipelineStepExtractor.class.getName());
-    private static int count = 0;
+    private static HyperLocalPluginManagerInit starter = new HyperLocalPluginManagerInit();
+    private static HyperLocalPluginManager pluginManager;
+    private static List<StepDescriptor> steps;
 
     @BeforeAll
     public static void init() {
-        steps = pse.findSteps(pluginDir);
-        for (String plugin : steps.keySet()) {
-            LOG.info("processing " + plugin);
-            List<QuasiDescriptor> byPlugin = steps.get(plugin).get("Steps");
-            // PluginWrapper thePlugin = pse.pluginManager.getPlugin(plugin);
-            // String displayName = thePlugin == null ? "Jenkins Core" :
-            // thePlugin.getDisplayName();
-            // LOG.info(displayName);
-            // for (QuasiDescriptor qd : byPlugin) {
-            // LOG.info(qd.getSymbol());
-            // count++;
-            // }
-            count += byPlugin.size();
+        pluginManager = starter.initializeHyperLocalPluginManager(pluginDir);
+        steps = pluginManager.getPluginStrategy().findComponents(StepDescriptor.class);
+    }
+
+    @Test
+    public void TotalStepsShouldBeFortySeven() {
+        assertEquals(47, steps.size());
+    }
+
+    @Test
+    public void isGitStepPresent() {
+        boolean containsGit = false;
+        for (StepDescriptor step : steps) {
+            if (step.getFunctionName() == "git") {
+                containsGit = true;
+            }
         }
-        LOG.info("Total " + count + " steps found in " + steps.size() + " plugins");
+        assertTrue(containsGit);
     }
 
     @Test
-    public void areTotalStepsFortySeven() {
-        assertEquals(47, count);
+    public void isUnarchiveStepAdvanced() {
+        for (StepDescriptor step : steps) {
+            if (step.getFunctionName() == "unarchive") {
+                assertTrue(step.isAdvanced());
+                return;
+            }
+        }
+        fail("unarchive step not found");
     }
 
     @Test
-    public void isLastMilestoneCompletedInitialization() {
-        assertEquals("Completed initialization", pse.lastMilestone.toString());
+    public void checkoutShouldBelongToWorkflowSCMStep() {
+        for (StepDescriptor step : steps) {
+            if (step.getFunctionName() == "checkout") {
+                String pluginName = pluginManager.getPluginNameForDescriptor(step);
+                assertEquals("workflow-scm-step", pluginName);
+                return;
+            }
+        }
+        fail("checkout step not found");
+    }
+
+    @Test
+    public void LastMilestoneShouldBeCompletedInitialization() {
+        assertEquals("Completed initialization", starter.lastMilestone.toString());
     }
 }
