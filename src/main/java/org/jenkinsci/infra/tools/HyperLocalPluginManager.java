@@ -321,8 +321,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
             List<URL> resources = new ArrayList<>();
             if (FAST_LOOKUP) {
                 for (PluginWrapper p : activePlugins) {
-                    resources
-                            .addAll(Collections.list(ClassLoaderReflectionToolkit._findResources(p.classLoader, name)));
+                    resources.addAll(Collections.list(ClassLoaderReflectionToolkit._findResources(p.classLoader, name)));
                 }
             } else {
                 for (PluginWrapper p : activePlugins) {

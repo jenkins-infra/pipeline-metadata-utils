@@ -21,7 +21,7 @@ import jenkins.InitReactorRunner;
 import jenkins.model.Jenkins;
 
 /**
- * Process and find all the Pipeline steps definied in Jenkins plugins.
+ * Initializes a HyperLocalPluginManager instance, so that it can be used for testing.
  */
 public class HyperLocalPluginManagerInit {
     private static final Logger LOG = Logger.getLogger(HyperLocalPluginManagerInit.class.getName());
