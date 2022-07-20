@@ -19,7 +19,8 @@ import hudson.model.listeners.SaveableListener;
 import jenkins.model.Jenkins;
 
 /**
- * A mocked way to get at {@link ExtensionList}s. In {@code hudson} package due to protected access in {@link ExtensionList}.
+ * A mocked way to get at {@link ExtensionList}s. In {@code hudson} package due
+ * to protected access in {@link ExtensionList}.
  */
 
 public class MockExtensionLists {
@@ -31,7 +32,7 @@ public class MockExtensionLists {
             doReturn(Collections.emptyIterator()).when(ret).iterator();
             return ret;
         }
-        if(extensionLists.get(type.getName()) != null) {
+        if (extensionLists.get(type.getName()) != null) {
             return extensionLists.get(type.getName());
         } else {
             MockExtensionList<?> mockList = new MockExtensionList<>(hlpm, hudson, type);
@@ -54,12 +55,12 @@ public class MockExtensionLists {
         private Answer<List<ExtensionComponent<T>>> mockLoad(HyperLocalPluginManager hlpm) {
             return new Answer<List<ExtensionComponent<T>>>() {
                 public List<ExtensionComponent<T>> answer(InvocationOnMock invocation) throws Throwable {
-                    return hlpm.getPluginStrategy().findComponents(mockExtensionList.extensionType, (Hudson)null);
+                    return hlpm.getPluginStrategy().findComponents(mockExtensionList.extensionType, (Hudson) null);
                 }
             };
         }
 
-        public ExtensionList<T> getMockExtensionList(){
+        public ExtensionList<T> getMockExtensionList() {
             return mockExtensionList;
         }
     }
