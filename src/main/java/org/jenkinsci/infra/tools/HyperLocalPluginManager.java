@@ -529,7 +529,6 @@ public class HyperLocalPluginManager extends LocalPluginManager {
      */
     public String getPluginNameForDescriptor(Descriptor<?> d) {
         String className = d.getClass().getName();
-        String pluginName = uberPlusClassLoader.getByPlugin().get(className);
         // try one last time to find out which plugin this belongs to (needed for
         // WEBSITE-434)
         try {
@@ -537,6 +536,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
         } catch (ClassNotFoundException e) {
             LOG.log(Level.FINER, "Class not found for " + d.getId());
         }
+        String pluginName = uberPlusClassLoader.getByPlugin().get(className);
         if (pluginName == null) {
             LOG.info("No plugin found, assuming core: " + className);
             return "core";
