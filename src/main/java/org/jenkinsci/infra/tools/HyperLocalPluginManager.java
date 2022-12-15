@@ -420,7 +420,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
      * The only differences are:
      * * getIndices -&gt; ClassLoader parameter; doesn't check Jenkins
      * * find -&gt; ClassLoader parameter
-     * * scout -&gt; ClassLoader parmeter
+     * * scout -&gt; ClassLoader parameter
      *
      * IMPORTANT: don't use find(Class&lt;T&gt; type, Hudson hud) as the getIndices
      * method will error.
