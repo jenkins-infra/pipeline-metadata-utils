@@ -30,9 +30,10 @@ pipeline {
     stages {
         stage("build") {
             steps {
-                sh 'mvn clean validate javadoc:aggregate -Dmaven.test.failure.ignore=true'
+                script {
+                    infra.runMaven(['clean', 'validate', 'javadoc:aggregate', '-Dmaven.test.failure.ignore=true'], 11)
+                }
             }
         }
     }
 }
-
