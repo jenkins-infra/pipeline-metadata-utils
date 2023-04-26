@@ -2,6 +2,21 @@ package org.jenkinsci.infra.tools;
 
 import static hudson.init.InitMilestone.PLUGINS_LISTED;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.ClassicPluginStrategy;
+import hudson.Extension;
+import hudson.ExtensionComponent;
+import hudson.ExtensionFinder;
+import hudson.LocalPluginManager;
+import hudson.PluginManager;
+import hudson.PluginWrapper;
+import hudson.init.InitStrategy;
+import hudson.model.Descriptor;
+import hudson.model.Hudson;
+import hudson.util.CyclicGraphDetector;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -23,33 +38,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.jvnet.hudson.reactor.Executable;
-import org.jvnet.hudson.reactor.Reactor;
-import org.jvnet.hudson.reactor.TaskBuilder;
-import org.jvnet.hudson.reactor.TaskGraphBuilder;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.ClassicPluginStrategy;
-import hudson.Extension;
-import hudson.ExtensionComponent;
-import hudson.ExtensionFinder;
-import hudson.LocalPluginManager;
-import hudson.PluginManager;
-import hudson.PluginWrapper;
-import hudson.init.InitStrategy;
-import hudson.model.Descriptor;
-import hudson.model.Hudson;
-import hudson.util.CyclicGraphDetector;
 import jenkins.ClassLoaderReflectionToolkit;
 import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionFilter;
 import net.java.sezpoz.Index;
 import net.java.sezpoz.IndexItem;
+import org.jvnet.hudson.reactor.Executable;
+import org.jvnet.hudson.reactor.Reactor;
+import org.jvnet.hudson.reactor.TaskBuilder;
+import org.jvnet.hudson.reactor.TaskGraphBuilder;
 
 /**
  * Acts as a PluginManager that operates outside the normal startup process of
@@ -113,19 +110,20 @@ public class HyperLocalPluginManager extends LocalPluginManager {
                         final Map<String, File> inspectedShortNames = new HashMap<>();
 
                         for (final File arc : archives) {
-                            g.followedBy().notFatal().attains(PLUGINS_LISTED).add("Inspecting plugin " + arc,
-                                    new Executable() {
+                            g.followedBy()
+                                    .notFatal()
+                                    .attains(PLUGINS_LISTED)
+                                    .add("Inspecting plugin " + arc, new Executable() {
                                         public void run(Reactor session1) throws Exception {
                                             try {
                                                 PluginWrapper p = strategy.createPluginWrapper(arc);
-                                                if (isDuplicate(p))
-                                                    return;
+                                                if (isDuplicate(p)) return;
 
                                                 // p.isBundled = false; //flying blind here; luckily doesn't look used
                                                 plugins.add(p);
 
                                                 if (p.isActive()) // omg test!
-                                                    activePlugins.add(p);
+                                                activePlugins.add(p);
                                             } catch (IOException e) {
                                                 failedPlugins.add(new FailedPlugin(arc.getName(), e));
                                                 throw e;
@@ -152,61 +150,64 @@ public class HyperLocalPluginManager extends LocalPluginManager {
                         }
 
                         if (checkCycles) {
-                            g.followedBy().attains(PLUGINS_LISTED).add("Checking cyclic dependencies",
-                                    new Executable() {
+                            g.followedBy()
+                                    .attains(PLUGINS_LISTED)
+                                    .add("Checking cyclic dependencies", new Executable() {
                                         /**
                                          * Makes sure there's no cycle in dependencies.
                                          */
                                         public void run(Reactor reactor) throws Exception {
                                             try {
-                                                CyclicGraphDetector<PluginWrapper> cgd = new CyclicGraphDetector<PluginWrapper>() {
-                                                    @Override
-                                                    protected List<PluginWrapper> getEdges(PluginWrapper p) {
-                                                        List<PluginWrapper> next = new ArrayList<>();
-                                                        addTo(p.getDependencies(), next);
-                                                        addTo(p.getOptionalDependencies(), next);
-                                                        return next;
-                                                    }
+                                                CyclicGraphDetector<PluginWrapper> cgd =
+                                                        new CyclicGraphDetector<PluginWrapper>() {
+                                                            @Override
+                                                            protected List<PluginWrapper> getEdges(PluginWrapper p) {
+                                                                List<PluginWrapper> next = new ArrayList<>();
+                                                                addTo(p.getDependencies(), next);
+                                                                addTo(p.getOptionalDependencies(), next);
+                                                                return next;
+                                                            }
 
-                                                    private void addTo(List<PluginWrapper.Dependency> dependencies,
-                                                            List<PluginWrapper> r) {
-                                                        for (PluginWrapper.Dependency d : dependencies) {
-                                                            PluginWrapper p = getPlugin(d.shortName);
-                                                            if (p != null)
-                                                                r.add(p);
-                                                        }
-                                                    }
+                                                            private void addTo(
+                                                                    List<PluginWrapper.Dependency> dependencies,
+                                                                    List<PluginWrapper> r) {
+                                                                for (PluginWrapper.Dependency d : dependencies) {
+                                                                    PluginWrapper p = getPlugin(d.shortName);
+                                                                    if (p != null) r.add(p);
+                                                                }
+                                                            }
 
-                                                    @Override
-                                                    protected void reactOnCycle(PluginWrapper q,
-                                                            List<PluginWrapper> cycle) {
+                                                            @Override
+                                                            protected void reactOnCycle(
+                                                                    PluginWrapper q, List<PluginWrapper> cycle) {
 
-                                                        CharSequence[] csCycle = cycle
-                                                                .toArray(new CharSequence[cycle.size()]);
-                                                        LOG.severe("FATAL: found cycle in plugin dependencies: (root="
-                                                                + q + ", deactivating all involved) "
-                                                                + String.join(" -> ", csCycle));
-                                                        for (PluginWrapper pluginWrapper : cycle) {
-                                                            pluginWrapper.setHasCycleDependency(true);
-                                                            failedPlugins
-                                                                    .add(new FailedPlugin(pluginWrapper.getShortName(),
+                                                                CharSequence[] csCycle =
+                                                                        cycle.toArray(new CharSequence[cycle.size()]);
+                                                                LOG.severe(
+                                                                        "FATAL: found cycle in plugin dependencies: (root="
+                                                                                + q + ", deactivating all involved) "
+                                                                                + String.join(" -> ", csCycle));
+                                                                for (PluginWrapper pluginWrapper : cycle) {
+                                                                    pluginWrapper.setHasCycleDependency(true);
+                                                                    failedPlugins.add(new FailedPlugin(
+                                                                            pluginWrapper.getShortName(),
                                                                             new CycleDetectedException(cycle)));
-                                                        }
-                                                    }
-                                                };
+                                                                }
+                                                            }
+                                                        };
                                                 cgd.run(getPlugins());
 
                                                 // obtain topologically sorted list and overwrite the list
-                                                ListIterator<PluginWrapper> litr = getPlugins().listIterator();
+                                                ListIterator<PluginWrapper> litr =
+                                                        getPlugins().listIterator();
                                                 for (PluginWrapper p : cgd.getSorted()) {
                                                     litr.next();
                                                     litr.set(p);
-                                                    if (p.isActive())
-                                                        activePlugins.add(p);
+                                                    if (p.isActive()) activePlugins.add(p);
                                                 }
                                             } catch (CyclicGraphDetector.CycleDetectedException e) {
                                                 stop(); // disable all plugins since classloading from them can lead to
-                                                        // StackOverflow
+                                                // StackOverflow
                                                 throw e; // let load fail
                                             }
                                         }
@@ -230,6 +231,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
         private final ConcurrentMap<String, WeakReference<Class<?>>> generatedClasses = new ConcurrentHashMap<>();
         /** Cache of loaded, or known to be unloadable, classes. */
         private final Map<String, Class<?>> loaded = new HashMap<>();
+
         private final Map<String, String> byPlugin = new HashMap<>();
 
         public UberPlusClassLoader() {
@@ -242,10 +244,8 @@ public class HyperLocalPluginManager extends LocalPluginManager {
             WeakReference<Class<?>> wc = generatedClasses.get(name);
             if (wc != null) {
                 Class<?> c = wc.get();
-                if (c != null)
-                    return c;
-                else
-                    generatedClasses.remove(name, wc);
+                if (c != null) return c;
+                else generatedClasses.remove(name, wc);
             }
 
             if (name.startsWith("SimpleTemplateScript")) { // cf. groovy.text.SimpleTemplateEngine
@@ -303,14 +303,12 @@ public class HyperLocalPluginManager extends LocalPluginManager {
             if (FAST_LOOKUP) {
                 for (PluginWrapper p : activePlugins) {
                     URL url = ClassLoaderReflectionToolkit._findResource(p.classLoader, name);
-                    if (url != null)
-                        return url;
+                    if (url != null) return url;
                 }
             } else {
                 for (PluginWrapper p : activePlugins) {
                     URL url = p.classLoader.getResource(name);
-                    if (url != null)
-                        return url;
+                    if (url != null) return url;
                 }
             }
             return null;
@@ -321,7 +319,8 @@ public class HyperLocalPluginManager extends LocalPluginManager {
             List<URL> resources = new ArrayList<>();
             if (FAST_LOOKUP) {
                 for (PluginWrapper p : activePlugins) {
-                    resources.addAll(Collections.list(ClassLoaderReflectionToolkit._findResources(p.classLoader, name)));
+                    resources.addAll(
+                            Collections.list(ClassLoaderReflectionToolkit._findResources(p.classLoader, name)));
                 }
             } else {
                 for (PluginWrapper p : activePlugins) {
@@ -371,8 +370,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
 
             List<ExtensionComponent<T>> filtered = Lists.newArrayList();
             for (ExtensionComponent<T> e : r) {
-                if (ExtensionFilter.isAllowed(type, e))
-                    filtered.add(e);
+                if (ExtensionFilter.isAllowed(type, e)) filtered.add(e);
             }
             return filtered;
         }
@@ -395,8 +393,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
 
             List<T> filtered = Lists.newArrayList();
             for (ExtensionComponent<T> e : r) {
-                if (ExtensionFilter.isAllowed(type, e))
-                    filtered.add(e.getInstance());
+                if (ExtensionFilter.isAllowed(type, e)) filtered.add(e.getInstance());
             }
 
             return filtered;
@@ -446,7 +443,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
 
         /**
          * DO NOT EVER CALL (unless called after other find)
-         * 
+         *
          * This was required for overriding ExtensionFinder
          */
         public <T> Collection<ExtensionComponent<T>> find(Class<T> type, Hudson hud) {
@@ -474,8 +471,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
                         extType = ((Field) e).getType();
                     } else if (e instanceof Method) {
                         extType = ((Method) e).getReturnType();
-                    } else
-                        throw new AssertionError();
+                    } else throw new AssertionError();
 
                     if (type.isAssignableFrom(extType)) {
                         Object instance = safeInstance(item);
@@ -495,7 +491,9 @@ public class HyperLocalPluginManager extends LocalPluginManager {
             try {
                 return item.instance();
             } catch (Exception | Error e) {
-                LOG.log(Level.WARNING, "Cannot instantiate " + item.className(),
+                LOG.log(
+                        Level.WARNING,
+                        "Cannot instantiate " + item.className(),
                         e.getCause() != null ? e.getCause() : e);
             }
             return null;
@@ -512,8 +510,7 @@ public class HyperLocalPluginManager extends LocalPluginManager {
                         extType = ((Field) e).getType();
                     } else if (e instanceof Method) {
                         extType = ((Method) e).getReturnType();
-                    } else
-                        throw new AssertionError();
+                    } else throw new AssertionError();
                     // according to JDK-4993813 this is the only way to force class initialization
                     Class.forName(extType.getName(), true, extType.getClassLoader());
                 } catch (Exception | LinkageError e) {

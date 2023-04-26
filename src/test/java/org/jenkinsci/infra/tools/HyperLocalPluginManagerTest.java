@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
-
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -14,7 +13,8 @@ import org.junit.jupiter.api.Test;
  * Uses the git-plugin <code>jpi</code>s to test the <code>HyperLocalPluginManager</code>.
  */
 public class HyperLocalPluginManagerTest {
-    private final static String pluginDir = HyperLocalPluginManagerTest.class.getResource("/git-plugin").getPath();
+    private static final String pluginDir =
+            HyperLocalPluginManagerTest.class.getResource("/git-plugin").getPath();
     private static HyperLocalPluginManagerInit starter = new HyperLocalPluginManagerInit();
     private static HyperLocalPluginManager pluginManager;
     private static List<StepDescriptor> steps;
@@ -22,7 +22,7 @@ public class HyperLocalPluginManagerTest {
     /**
      * Initialize the plugin manager, and query it for the plugin strategy using
      * <code>getPluginStrategy</code>.
-     * 
+     *
      * <code>steps</code> stores the list of components that are of type
      * StepDescriptor inside the plugin strategy.
      */

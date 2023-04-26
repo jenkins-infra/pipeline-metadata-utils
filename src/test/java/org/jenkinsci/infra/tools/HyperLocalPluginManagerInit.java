@@ -3,22 +3,20 @@ package org.jenkinsci.infra.tools;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.jvnet.hudson.reactor.Reactor;
-import org.jvnet.hudson.reactor.ReactorException;
-import org.jvnet.hudson.reactor.Task;
-import org.jvnet.hudson.reactor.TaskBuilder;
-
 import hudson.MockJenkins;
 import hudson.init.InitMilestone;
 import hudson.init.InitStrategy;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jenkins.InitReactorRunner;
 import jenkins.model.Jenkins;
+import org.jvnet.hudson.reactor.Reactor;
+import org.jvnet.hudson.reactor.ReactorException;
+import org.jvnet.hudson.reactor.Task;
+import org.jvnet.hudson.reactor.TaskBuilder;
 
 /**
  * Initializes a HyperLocalPluginManager instance, so that it can be used for testing.
@@ -66,8 +64,7 @@ public class HyperLocalPluginManagerInit {
              */
             @Override
             protected void runTask(Task task) throws Exception {
-                if (is != null && is.skipInitTask(task))
-                    return;
+                if (is != null && is.skipInitTask(task)) return;
 
                 String taskName = task.getDisplayName();
 
