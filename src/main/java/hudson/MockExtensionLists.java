@@ -5,24 +5,21 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import hudson.model.Hudson;
+import hudson.model.listeners.SaveableListener;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import jenkins.model.Jenkins;
 import org.jenkinsci.infra.tools.HyperLocalPluginManager;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import hudson.model.Hudson;
-import hudson.model.listeners.SaveableListener;
-import jenkins.model.Jenkins;
 
 /**
  * A mocked way to get at {@link ExtensionList}s. In {@code hudson} package due
  * to protected access in {@link ExtensionList}.
  */
-
 public class MockExtensionLists {
     private static Map<String, ExtensionList<?>> extensionLists = new HashMap<String, ExtensionList<?>>();
 

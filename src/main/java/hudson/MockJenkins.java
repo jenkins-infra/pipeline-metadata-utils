@@ -18,21 +18,18 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
-import java.lang.reflect.Field;
-
-import javax.servlet.ServletContext;
-
-import org.jenkinsci.infra.tools.HyperLocalPluginManager;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import hudson.init.InitMilestone;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
-import hudson.model.Hudson; //only needed until Hudson reference is removed from the ExtensionList.
+import hudson.model.Hudson;
+import java.io.File;
+import java.lang.reflect.Field;
+import javax.servlet.ServletContext;
 import jenkins.install.InstallState;
 import jenkins.model.Jenkins;
+import org.jenkinsci.infra.tools.HyperLocalPluginManager;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class MockJenkins {
     private MockExtensionLists mockLookup = new MockExtensionLists();
@@ -46,7 +43,7 @@ public class MockJenkins {
      * * getExtensionList -&gt; use the MockExtensionLists
      * * getPlugin -&gt; get the Plugin information from HyperLocalPluginManager
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Jenkins getMockJenkins(HyperLocalPluginManager pm) {
         Jenkins mockJenkins = mock(Hudson.class); // required by ExtensionList
         when(mockJenkins.getPluginManager()).thenReturn(pm);
@@ -65,34 +62,39 @@ public class MockJenkins {
             e.printStackTrace();
         }
         doAnswer(new Answer<ExtensionList>() {
-            @Override
-            public ExtensionList answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                return mockLookup.getMockExtensionList(pm, mockJenkins, (Class) args[0]);
-            }
-        }).when(mockJenkins).getExtensionList(any(Class.class));
+                    @Override
+                    public ExtensionList answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        return mockLookup.getMockExtensionList(pm, mockJenkins, (Class) args[0]);
+                    }
+                })
+                .when(mockJenkins)
+                .getExtensionList(any(Class.class));
 
         doAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            for (Object _d : mockLookup.getMockExtensionList(pm, mockJenkins, Descriptor.class)) {
-                Descriptor d = (Descriptor) _d;
-                if (d.clazz == args[0]) {
-                    return d;
-                }
-            }
-            return null;
-        }).when(mockJenkins).getDescriptor(any(Class.class));
+                    Object[] args = invocation.getArguments();
+                    for (Object _d : mockLookup.getMockExtensionList(pm, mockJenkins, Descriptor.class)) {
+                        Descriptor d = (Descriptor) _d;
+                        if (d.clazz == args[0]) {
+                            return d;
+                        }
+                    }
+                    return null;
+                })
+                .when(mockJenkins)
+                .getDescriptor(any(Class.class));
 
         doAnswer(new Answer<Plugin>() {
-            @Override
-            public Plugin answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                PluginWrapper p = pm.getPlugin((Class) args[0]);
-                if (p == null)
-                    return null; // not actually loaded; might need an override
-                return p.getPlugin();
-            }
-        }).when(mockJenkins).getPlugin(any(Class.class));
+                    @Override
+                    public Plugin answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        PluginWrapper p = pm.getPlugin((Class) args[0]);
+                        if (p == null) return null; // not actually loaded; might need an override
+                        return p.getPlugin();
+                    }
+                })
+                .when(mockJenkins)
+                .getPlugin(any(Class.class));
 
         return mockJenkins;
     }
