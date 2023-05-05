@@ -11,14 +11,14 @@
 
   <groupId>org.jenkins-ci.infra</groupId>
   <artifactId>pipeline-metadata-utils</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>1.6</version>
   <name>Pipeline Metadata Utils</name>
   <description>Utilities for use in generating metadata and documentation for Pipeline steps or other Describables</description>
 
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
-    <tag>${scmTag}</tag>
+    <tag>pipeline-metadata-utils-1.6</tag>
     <url>https://github.com/${gitHubRepo}.git</url>
   </scm>
 
