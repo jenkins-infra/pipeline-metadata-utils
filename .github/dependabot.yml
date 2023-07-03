@@ -8,7 +8,6 @@ updates:
   target-branch: master
   reviewers:
   - MarkEWaite
-  - jmMeessen
   labels:
   - dependencies
   ignore:
@@ -20,7 +19,5 @@ updates:
   schedule:
     interval: "weekly"
   target-branch: "master"
-  reviewers:
-  - jmMeessen
   labels:
   - dependencies
