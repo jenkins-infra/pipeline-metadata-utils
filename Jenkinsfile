@@ -31,7 +31,7 @@ pipeline {
         stage("build") {
             steps {
                 script {
-                    infra.runMaven(['clean', 'validate', 'javadoc:aggregate', '-Dmaven.test.failure.ignore=true'], 11)
+                    infra.runMaven(['clean', 'validate', 'javadoc:aggregate', '-Dmaven.test.failure.ignore=true'], 21)
                 }
             }
         }
