@@ -6,7 +6,7 @@ pipeline {
     }
 
     agent {
-        label "linux-amd64"
+        label "maven-21"
     }
 
     // Make sure we have GIT_COMMITTER_NAME and GIT_COMMITTER_EMAIL set due to machine weirdness.
