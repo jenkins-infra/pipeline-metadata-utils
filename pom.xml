@@ -43,13 +43,6 @@
 
   <dependencies>
     <dependency>
-      <!-- Satisfy upper bounds dependency check from Jenkins 2.456 -->
-      <!-- json-lib:2.4-jenkins-7 inside Jenkins core updates the version of commons-logging -->
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.4.0</version>
-    </dependency>
-    <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
       <version>5.0.0</version>
