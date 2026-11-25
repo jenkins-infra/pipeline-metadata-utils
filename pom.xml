@@ -18,13 +18,13 @@
   <scm>
     <connection>scm:git:https://github.com/${gitHubRepo}.git</connection>
     <developerConnection>scm:git:git@github.com:${gitHubRepo}.git</developerConnection>
-    <tag>pipeline-metadata-utils-1.12</tag>
+    <tag>${scmTag}</tag>
     <url>https://github.com/${gitHubRepo}.git</url>
   </scm>
 
   <properties>
-    <revision>1.12</revision>
-    <changelist></changelist>
+    <revision>1.13</revision>
+    <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkins-infra/${project.artifactId}</gitHubRepo>
     <spotless.check.skip>true</spotless.check.skip>
   </properties>
