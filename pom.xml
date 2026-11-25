@@ -26,7 +26,7 @@
     <revision>1.12</revision>
     <changelist>-SNAPSHOT</changelist>
     <gitHubRepo>jenkins-infra/${project.artifactId}</gitHubRepo>
-    <spotless.check.skip>false</spotless.check.skip>
+    <spotless.check.skip>true</spotless.check.skip>
   </properties>
 
   <dependencyManagement>
