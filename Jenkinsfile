@@ -2,11 +2,11 @@
 pipeline {
     tools {
         maven "mvn"
-        jdk "jdk21"
+        jdk "jdk25"
     }
 
     agent {
-        label "maven-21"
+        label "maven-25"
     }
 
     // Make sure we have GIT_COMMITTER_NAME and GIT_COMMITTER_EMAIL set due to machine weirdness.
@@ -31,7 +31,7 @@ pipeline {
         stage("build") {
             steps {
                 script {
-                    infra.runMaven(['clean', 'validate', 'javadoc:aggregate', '-Dmaven.test.failure.ignore=true'], 21)
+                    infra.runMaven(['clean', 'validate', 'javadoc:aggregate', '-Dmaven.test.failure.ignore=true'], 25)
                 }
             }
         }
