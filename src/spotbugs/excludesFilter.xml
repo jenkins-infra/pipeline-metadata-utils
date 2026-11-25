@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <FindBugsFilter>
+  <Match>
+    <Bug pattern="USO_UNSAFE_ACCESSIBLE_OBJECT_SYNCHRONIZATION"/>
+    <Class name="org.jenkinsci.infra.tools.HyperLocalPluginManager$UberPlusClassLoader"/>
+  </Match>
   <!--
     Here lies technical debt. Exclusions in this section have not yet been triaged. When working on
     on this section, pick an exclusion to triage, then:
